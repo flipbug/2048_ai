@@ -1,0 +1,5 @@
+# Notes
+
+human (me): 2760 - 3032
+random AI: 600 - 2600
+heuristic AI: >3000 (record 14052)
