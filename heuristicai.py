@@ -13,7 +13,7 @@ MIN_THRESHOLD = 2
 OPTIMAL_POSITION_WEIGHT = 2
 BEST_MERGE_WEIGHT = 2
 FUTURE_MERGE_WEIGHT = 2
-DIRECTION_WEIGHT = [1, 0.75, 1, 0.5]
+DIRECTION_WEIGHT = [1, 1, 1, 1]
 
 def find_best_move(board):
     bestmove = -1
@@ -58,7 +58,7 @@ def find_best_move_rule_agent(board, threshold=0):
             move = find_best_move_rule_agent(board, threshold/2)
         else:
             # 3. Rule as fallback
-            move, value = find_move_by_optimal_position(board)
+            # move, value = find_move_by_optimal_position(board)
             print('Rule 3 fallback')
 
     return move
@@ -119,7 +119,7 @@ def find_move_by_number_of_merges(board):
         move = possible_move
 
     # weight adjustment
-    value = value 
+    value = value^2
 
     return move, value
 
