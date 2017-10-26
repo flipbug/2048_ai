@@ -119,7 +119,7 @@ def find_move_by_number_of_merges(board):
         move = possible_move
 
     # weight adjustment
-    value = value 
+    value = value^2
 
     return move, value
 
