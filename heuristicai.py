@@ -2,11 +2,11 @@ import random
 import game
 import sys
 
+from util import get_possible_merges, UP, DOWN, LEFT, RIGHT
+
 # Author:			chrn (original by nneonneo)
 # Date:				11.11.2016
 # Description:		The logic of the AI to beat the game.
-
-UP, DOWN, LEFT, RIGHT = 0, 1, 2, 3
 
 THRESHOLD = 8
 MIN_THRESHOLD = 2
@@ -70,7 +70,7 @@ def find_move_by_highest_merge(board, threshold=8):
     """
     move = -1
     value = -1
-    possible_merges = get_possible_merges(board)
+    possible_merges = get_possible_merges(board, direction_weight=DIRECTION_WEIGHT)
 
     if possible_merges and possible_merges[0]['number'] > threshold:
         move = possible_merges[0]['move']
@@ -90,7 +90,7 @@ def find_move_by_future_outcome(board, threshold=8):
     next_moves = {UP: 0, DOWN: 0, LEFT: 0, RIGHT: 0}
     for m in next_moves.keys():
         new_board = execute_move(m, board)
-        new_possible_moves = get_possible_merges(new_board)
+        new_possible_moves = get_possible_merges(new_board, direction_weight=DIRECTION_WEIGHT)
         next_moves[m] = new_possible_moves[0]['number'] if new_possible_moves else -1
 
     possible_move, value = find_best_move_in_dict(next_moves)
@@ -108,7 +108,7 @@ def find_move_by_number_of_merges(board):
     """
     move = -1
     value = -1
-    possible_merges = get_possible_merges(board)
+    possible_merges = get_possible_merges(board, direction_weight=DIRECTION_WEIGHT)
     amount_of_merges = {UP: 0, DOWN: 0, LEFT: 0, RIGHT: 0}
     for merge in possible_merges:
         amount_of_merges[merge['move']] += 1
@@ -184,71 +184,6 @@ def select_best_possible_move(moves, board):
     #print('Used Rule: {}'.format(index + 1))
 
     return move
-
-def get_possible_merges(board, threshold=0):
-    """
-    Get all possible merges on the current board and sort them descending by
-    value
-    """
-    moves = []
-    for y, row in enumerate(board):
-        for x, number in enumerate(row):
-            move = -1
-            if number > 0 and number > threshold:
-                # check if there are any possible merges with current number
-                if x > 1 and has_horizontal_merge(x, y, number, board, True): # board[y][x - 1] == number:
-                    move = LEFT
-                elif x < len(board[y]) - 1 and has_horizontal_merge(x, y, number, board): # board[y][x + 1] == number:
-                    move = RIGHT
-                elif y > 1 and has_vertical_merge(x, y, number, board, True): # board[y - 1][x] == number:
-                    move = UP
-                elif y < len(board) - 1 and has_vertical_merge(x, y, number, board): # board[y + 1][x] == number:
-                    move = DOWN
-
-                if move > 0:
-                    # make sure the preferred directions come at first
-                    number *= DIRECTION_WEIGHT[move]
-                    moves.append({'number':number, 'move': move})
-
-    return  sorted(moves, key=lambda x: x['number'], reverse=True)
-
-def has_horizontal_merge(x, y, number, board, backwards=False):
-    if not backwards:
-        start = x + 1
-        step = 1
-        end = len(board[y])
-    else:
-        start = x - 1
-        step = -1
-        end = 0
-
-    for i in range(start, end, step):
-        n = board[y][i]
-        if n > 0 and n != number:
-            return False
-        elif n == number:
-            return True
-
-    return False
-
-def has_vertical_merge(x, y, number, board, backwards=False):
-    if not backwards:
-        start = y + 1
-        step = 1
-        end = len(board)
-    else:
-        start = y - 1
-        step = -1
-        end = 0
-
-    for i in range(start, end, step):
-        n = board[i][x]
-        if n > 0 and n != number:
-            return False
-        elif n == number:
-            return True
-
-    return False
 
 def find_best_move_in_dict(move_dict):
     move = -1

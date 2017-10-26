@@ -4,10 +4,27 @@ import sys
 from multiprocessing import Pool
 import itertools
 
+from util import UP, DOWN, LEFT, RIGHT
+
 # Author:      chrn (original by nneonneo)
 # Date:        11.11.2016
 # Copyright:   Algorithm from https://github.com/nneonneo/2048-ai
 # Description: The logic to beat the game. Based on expectimax algorithm.
+
+MAX_DEPTH = 3
+"""
+TILE_WEIGHTS = [[8, 7, 6, 5],
+                [1, 1, 1, 4],
+                [-1, -1, 1, 3],
+                [-8, -1, 1, 2]]
+"""
+TILE_WEIGHTS = [[10, 8, 4, 2],
+                [8, 1, 1, 1],
+                [4, 1, 1, -1],
+                [2, 1, -1, -1]]
+
+MOVES = [UP,DOWN,LEFT,RIGHT]
+
 
 def find_best_move(board):
     """
@@ -15,16 +32,14 @@ def find_best_move(board):
     It will split the workload in 4 process for each move.
     """
     bestmove = -1
-    UP, DOWN, LEFT, RIGHT = 0, 1, 2, 3
-    move_args = [UP,DOWN,LEFT,RIGHT]
     pool = Pool()
     
-    result = pool.map(func_star, itertools.izip(move_args, itertools.repeat(board)))
+    result = pool.map(func_star, zip(MOVES, itertools.repeat(board)))
     bestmove = result.index(max(result))
     
-    for m in move_args:
-        print(m)
-        print(result[m])
+    #for m in move_args:
+    #    print(m)
+    #    print(result[m])
     pool.close()
     pool.join()
     
@@ -34,25 +49,70 @@ def score_toplevel_move(move, board):
     """
     Entry Point to score the first move.
     """
+	# Implement the Expectimax Algorithm.
+	# 1.) Start the recursion until it reach a certain depth
+	# 2.) When you don't reach the last depth, get all possible board states and
+	#	  calculate their scores dependence of the probability this will occur. (recursively)
+	# 3.) When you reach the leaf calculate the board score with your heuristic.
+    return score_max_node(move, board, 0)
+
+def score_chance_node(chance, board, depth):
+    """
+    Chance node
+    """
+    score = 0
+    for m in MOVES:
+        score += score_max_node(m, board, depth)
+    return score * chance
+
+def score_max_node(move, board, depth):
+    """
+    Max node
+    """
     newboard = execute_move(move, board)
+    depth += 1
+    score = 0
 
     if board_equals(board,newboard):
         return 0
-	# TODO:
-	# Implement the Expectimax Algorithm.
-	# 1.) Start the recursion until it reach a certain depth
-	# 2.) When you don't reach the last depth, get all possible board states and 
-	#		calculate their scores dependence of the probability this will occur. (recursively)
-	# 3.) When you reach the leaf calculate the board score with your heuristic.
-    return random.randint(1,1000)
+
+    if depth >= MAX_DEPTH:
+        return calculate_score(newboard)
+
+    for i, row in enumerate(newboard):
+        for j, number in enumerate(row):
+            if number == 0:
+                # create chance nodes
+                newboard[i][j] = 2
+                chance_one = score_chance_node(0.9, newboard, depth)
+                newboard[i][j] = 4
+                chance_two = score_chance_node(0.1, newboard, depth)
+                
+                # maximize score
+                score = max(score, chance_one, chance_two)
+
+    return score
+
+def calculate_score(board):
+    """
+    Calculate the score of the board based on value of tiles and number of empty tiles
+    """
+    tile_score = 0
+    empty_tiles = 0
+    for i, row in enumerate(board):
+        for j, value in enumerate(row):
+            if value == 0:
+                empty_tiles += 1
+            else:
+                tile_score += value * TILE_WEIGHTS[i][j]
+
+    return tile_score * empty_tiles
 
 def execute_move(move, board):
     """
     move and return the grid without a new random tile 
 	It won't affect the state of the game in the browser.
     """
-
-    UP, DOWN, LEFT, RIGHT = 0, 1, 2, 3
 
     if move == UP:
         return game.merge_up(board)

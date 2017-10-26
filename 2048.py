@@ -39,8 +39,8 @@ def to_score(m):
     return [[_to_score(c) for c in row] for row in m]
 
 def find_best_move(board):
-    return heuristicai.find_best_move(board)
-    #return searchai.find_best_move(board)
+    #return heuristicai.find_best_move(board)
+    return searchai.find_best_move(board)
 
 def movename(move):
     return ['up', 'down', 'left', 'right'][move]
