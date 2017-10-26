@@ -74,7 +74,7 @@ class Fast2048Control(Generic2048Control):
 
         # Send an "up" event, which will trigger our replaced isGameTerminated function
         self.send_key_event('keydown', 38)
-        time.sleep(0.1)
+        # time.sleep(0.1)
         self.send_key_event('keyup', 38)
 
         self.execute('GameManager.prototype.isGameTerminated = _func_tmp;')

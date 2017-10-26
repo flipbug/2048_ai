@@ -15,6 +15,8 @@ import os
 import searchai    #for task 3
 import heuristicai #for task 2
 
+from statistics import median
+
 def print_board(m):
     for row in m:
         for c in row:
@@ -43,7 +45,21 @@ def find_best_move(board):
 def movename(move):
     return ['up', 'down', 'left', 'right'][move]
 
-def play_game(gamectrl):
+def start_game(gamectrl, iterations=1, verbose=0):
+    highest_score = 0
+    highest_maxval = 0
+    scores = []
+    for i in range(iterations):
+        gamectrl.restart_game()
+        score, maxval = play_game(gamectrl, verbose)
+        highest_maxval = max(highest_maxval, maxval)
+        highest_score = max(highest_score, score)
+        scores.append(score)
+
+    average = sum(scores) / iterations
+    print("Games: %d, highest score: %d, median: %d, average: %d, highest tile: %d" % (iterations, highest_score, median(scores), average, highest_maxval))
+
+def play_game(gamectrl, verbose):
     moveno = 0
     start = time.time()
     while 1:
@@ -59,16 +75,17 @@ def play_game(gamectrl):
         move = find_best_move(board)
         if move < 0:
             break
-        print("%010.6f: Score %d, Move %d: %s" % (time.time() - start, gamectrl.get_score(), moveno, movename(move)))
+        if verbose >= 2:
+            print("%010.6f: Score %d, Move %d: %s" % (time.time() - start, gamectrl.get_score(), moveno, movename(move)))
         gamectrl.execute_move(move)
 
     score = gamectrl.get_score()
     board = gamectrl.get_board()
     maxval = max(max(row) for row in to_val(board))
-    print("Game over. Final score %d; highest tile %d." % (score, maxval))
+    if verbose >= 1:
+        print("Game over. Final score %d; highest tile %d." % (score, maxval))
     
-    gamectrl.restart_game()
-
+    return score, maxval
 
 def parse_args(argv):
     import argparse
@@ -77,11 +94,15 @@ def parse_args(argv):
     parser.add_argument('-p', '--port', help="Port number to control on (default: 32000 for Firefox, 9222 for Chrome)", type=int)
     parser.add_argument('-b', '--browser', help="Browser you're using. Only Firefox with the Remote Control extension, and Chrome with remote debugging, are supported right now.", default='firefox', choices=('firefox', 'chrome'))
     parser.add_argument('-k', '--ctrlmode', help="Control mode to use. If the browser control doesn't seem to work, try changing this.", default='hybrid', choices=('keyboard', 'fast', 'hybrid'))
+    parser.add_argument('-n', '--iterations', help="Number of games to play in a row.", default='1', type=int)
+    parser.add_argument('-v', '--verbose', help="Verbose Output. Show every move.", action='count')
 
     return parser.parse_args(argv)
 
 def main(argv):
     args = parse_args(argv)
+
+    verbose = args.verbose
 
     if args.browser == 'firefox':
         from ffctrl import FirefoxRemoteControl
@@ -107,7 +128,7 @@ def main(argv):
     if gamectrl.get_status() == 'ended':
         gamectrl.restart_game()
 
-    play_game(gamectrl)
+    start_game(gamectrl, args.iterations, args.verbose)
 
 if __name__ == '__main__':
     import sys

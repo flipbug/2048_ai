@@ -2,9 +2,9 @@ import random
 import game
 import sys
 
-# Author:				chrn (original by nneonneo)
+# Author:			chrn (original by nneonneo)
 # Date:				11.11.2016
-# Description:			The logic of the AI to beat the game.
+# Description:		The logic of the AI to beat the game.
 
 UP, DOWN, LEFT, RIGHT = 0, 1, 2, 3
 
@@ -13,7 +13,7 @@ MIN_THRESHOLD = 2
 OPTIMAL_POSITION_WEIGHT = 2
 BEST_MERGE_WEIGHT = 2
 FUTURE_MERGE_WEIGHT = 2
-DIRECTION_WEIGHT = [1, 0.75, 1, 0.5]
+DIRECTION_WEIGHT = [1, 1, 1, 1]
 
 def find_best_move(board):
     bestmove = -1
@@ -23,7 +23,7 @@ def find_best_move(board):
     bestmove = find_best_move_rule_agent(board, THRESHOLD)
     if bestmove == -1:
         # Fallback to random agent if no optimal move has been found
-        print('random')
+        # print('random')
         bestmove = find_best_move_random_agent()
     return bestmove
 
@@ -59,7 +59,7 @@ def find_best_move_rule_agent(board, threshold=0):
         else:
             # 3. Rule as fallback
             move, value = find_move_by_optimal_position(board)
-            print('Rule 3 fallback')
+            # print('Rule 3 fallback')
 
     return move
 
@@ -174,14 +174,14 @@ def select_best_possible_move(moves, board):
             move = item[0]
             index = idx
 
-    print(moves)
+    #print(moves)
 
     # check if the move is possible, otherwise discard it and try again
     if move > -1 and board_equals(board, execute_move(move, board)):
         del moves[index]
         move = select_best_possible_move(moves, board)
 
-    print('Used Rule: {}'.format(index + 1))
+    #print('Used Rule: {}'.format(index + 1))
 
     return move
 
