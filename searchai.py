@@ -1,6 +1,7 @@
 import random
 import game
 import sys
+import math
 from multiprocessing import Pool
 import itertools
 
@@ -11,17 +12,11 @@ from util import UP, DOWN, LEFT, RIGHT
 # Copyright:   Algorithm from https://github.com/nneonneo/2048-ai
 # Description: The logic to beat the game. Based on expectimax algorithm.
 
-MAX_DEPTH = 3
-"""
-TILE_WEIGHTS = [[8, 7, 6, 5],
-                [1, 1, 1, 4],
-                [-1, -1, 1, 3],
-                [-8, -1, 1, 2]]
-"""
-TILE_WEIGHTS = [[10, 8, 4, 2],
-                [8, 1, 1, 1],
-                [4, 1, 1, -1],
-                [2, 1, -1, -1]]
+MAX_DEPTH = 4
+TILE_WEIGHTS = [[10, 6, 4, 2],
+                [6, 1, 1, 1],
+                [4, 1, 0.5, 0.5],
+                [2, 1, 0.5, 0.1]]
 
 MOVES = [UP,DOWN,LEFT,RIGHT]
 
@@ -54,18 +49,20 @@ def score_toplevel_move(move, board):
 	# 2.) When you don't reach the last depth, get all possible board states and
 	#	  calculate their scores dependence of the probability this will occur. (recursively)
 	# 3.) When you reach the leaf calculate the board score with your heuristic.
-    return score_max_node(move, board, 0)
+    max_depth = calculate_max_depth(board)
+    # print(max_depth)
+    return score_max_node(move, board, 0, max_depth)
 
-def score_chance_node(chance, board, depth):
+def score_chance_node(chance, board, depth, max_depth):
     """
     Chance node
     """
     score = 0
     for m in MOVES:
-        score += score_max_node(m, board, depth)
+        score += score_max_node(m, board, depth, max_depth)
     return score * chance
 
-def score_max_node(move, board, depth):
+def score_max_node(move, board, depth, max_depth):
     """
     Max node
     """
@@ -76,7 +73,7 @@ def score_max_node(move, board, depth):
     if board_equals(board,newboard):
         return 0
 
-    if depth >= MAX_DEPTH:
+    if depth >= max_depth:
         return calculate_score(newboard)
 
     for i, row in enumerate(newboard):
@@ -84,9 +81,9 @@ def score_max_node(move, board, depth):
             if number == 0:
                 # create chance nodes
                 newboard[i][j] = 2
-                chance_one = score_chance_node(0.9, newboard, depth)
+                chance_one = score_chance_node(0.9, newboard, depth, max_depth)
                 newboard[i][j] = 4
-                chance_two = score_chance_node(0.1, newboard, depth)
+                chance_two = score_chance_node(0.1, newboard, depth, max_depth)
                 
                 # maximize score
                 score = max(score, chance_one, chance_two)
@@ -104,9 +101,20 @@ def calculate_score(board):
             if value == 0:
                 empty_tiles += 1
             else:
-                tile_score += value * TILE_WEIGHTS[i][j]
+                tile_score += value ** 2 * TILE_WEIGHTS[i][j]
 
     return tile_score * empty_tiles
+
+def calculate_max_depth(board):
+    empty_tiles = 0
+    for row in board:
+        for value in row:
+            if value == 0:
+                empty_tiles += 1
+
+    empty_tiles = max(empty_tiles, 1)
+    depth = math.floor(MAX_DEPTH / (empty_tiles/2) + 1)
+    return max(depth, 2) if depth <= MAX_DEPTH else MAX_DEPTH
 
 def execute_move(move, board):
     """

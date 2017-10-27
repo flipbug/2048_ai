@@ -1,6 +1,6 @@
 # Notes
 
-human (me): 2760 - 3032
+human (me): 2760 - 5032
 random AI: 600 - 2600
 heuristic AI: >3000 (record 14052)
 
@@ -9,4 +9,5 @@ max depth 2
 record around 7000
 
 max depth 3
-record 25192
+record 35312
+average: ~15000
