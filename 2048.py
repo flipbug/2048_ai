@@ -9,6 +9,7 @@
 
 
 from __future__ import print_function
+from line_profiler import LineProfiler
 
 import time
 import os
@@ -16,6 +17,8 @@ import searchai    #for task 3
 import heuristicai #for task 2
 
 from statistics import median
+
+PROFILE_MODE = False
 
 def print_board(m):
     for row in m:
@@ -40,7 +43,18 @@ def to_score(m):
 
 def find_best_move(board):
     #return heuristicai.find_best_move(board)
-    return searchai.find_best_move(board)
+
+    if PROFILE_MODE:
+        lp = LineProfiler()
+        lp.add_function(searchai.execute_move)
+        lp.add_function(searchai.score_max_node)
+        lp_wrapper = lp(searchai.find_best_move)
+        move = lp_wrapper(board)
+        lp.print_stats()
+    else:
+        move = searchai.find_best_move(board)
+
+    return move
 
 def movename(move):
     return ['up', 'down', 'left', 'right'][move]
@@ -61,7 +75,6 @@ def start_game(gamectrl, iterations=1, verbose=0):
 
 def play_game(gamectrl, verbose):
     moveno = 0
-    start = time.time()
     while 1:
         state = gamectrl.get_status()
         if state == 'ended':
@@ -72,11 +85,13 @@ def play_game(gamectrl, verbose):
 
         moveno += 1
         board = gamectrl.get_board()
+        start = time.time()
         move = find_best_move(board)
         if move < 0:
             break
-        if verbose >= 2:
-            print("%010.6f: Score %d, Move %d: %s" % (time.time() - start, gamectrl.get_score(), moveno, movename(move)))
+        if verbose >= 1:
+            print("Execution time: %010.6fs" % (time.time() - start))
+            print("Score %d, Move %d: %s" % (gamectrl.get_score(), moveno, movename(move)))
         gamectrl.execute_move(move)
 
     score = gamectrl.get_score()
@@ -96,7 +111,7 @@ def parse_args(argv):
     parser.add_argument('-k', '--ctrlmode', help="Control mode to use. If the browser control doesn't seem to work, try changing this.", default='hybrid', choices=('keyboard', 'fast', 'hybrid'))
     parser.add_argument('-n', '--iterations', help="Number of games to play in a row.", default='1', type=int)
     parser.add_argument('-v', '--verbose', help="Verbose Output. Show every move.", action='count')
-
+    parser.add_argument('--profiler', help="Run the game with line_profiler enabled.", action="store_true")
     return parser.parse_args(argv)
 
 def main(argv):
@@ -128,8 +143,13 @@ def main(argv):
     if gamectrl.get_status() == 'ended':
         gamectrl.restart_game()
 
+    if args.profiler:
+        global PROFILE_MODE
+        PROFILE_MODE = True    
+        
     start_game(gamectrl, args.iterations, args.verbose)
 
 if __name__ == '__main__':
     import sys
     exit(main(sys.argv[1:]))
+

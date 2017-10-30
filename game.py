@@ -1,6 +1,7 @@
 # -*- coding: UTF-8 -*-
 import random
 import numpy as np
+from numba import jit
 
 # Author:      chrn (original by Micha Schwendener)
 # Date:				 11.11.2016
@@ -54,36 +55,41 @@ def merge_left(b):
     Args: b (list) two dimensional board to merge
     Returns: list
     """
-
-    def merge(row, acc):
-        """
-        Recursive helper for merge_left. If we're finished with the list,
-        nothing to do; return the accumulator. Otherwise, if we have
-        more than one element, combine results of first from the left with right if
-        they match. If there's only one element, no merge exists and we can just
-        add it to the accumulator.
-        Args:
-            row (list) row in b we're trying to merge
-            acc (list) current working merged row
-        Returns: list
-        """
-
-        if not row:
-            return acc
-
-        x = row[0]
-        if len(row) == 1:
-            return acc + [x]
-
-        return merge(row[2:], acc + [2*x]) if x == row[1] else merge(row[1:], acc + [x])
-
     board = []
     for row in b:
-        merged = merge([x for x in row if x != 0], [])
+        merged = merge(remove_zeros(row), [])
         merged = merged + [0]*(len(row)-len(merged))
         board.append(merged)
     return np.array(board)
 
+@jit(cache=True)
+def remove_zeros(arr):
+    return [x for x in arr if x != 0]
+
+@jit
+def merge(row, acc):
+    """
+    Recursive helper for merge_left. If we're finished with the list,
+    nothing to do; return the accumulator. Otherwise, if we have
+    more than one element, combine results of first from the left with right if
+    they match. If there's only one element, no merge exists and we can just
+    add it to the accumulator.
+    Args:
+        row (list) row in b we're trying to merge
+        acc (list) current working merged row
+    Returns: list
+    """
+
+    if not row:
+        return acc
+
+    x = row[0]
+    if len(row) == 1:
+        return acc + [x]
+
+    return merge(row[2:], acc + [2*x]) if x == row[1] else merge(row[1:], acc + [x])
+
+@jit
 def move_exists(b):
     """
     Check whether or not a move exists on the board
